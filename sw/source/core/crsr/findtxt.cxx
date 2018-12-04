@@ -654,13 +654,19 @@ struct SwFindParaText : public SwFindParas
 {
     const i18nutil::SearchOptions2& m_rSearchOpt;
     SwCursor& m_rCursor;
+    SwRootFrame const* m_pLayout;
     utl::TextSearch m_aSText;
     bool const m_bReplace;
     bool const m_bSearchInNotes;
 
-    SwFindParaText( const i18nutil::SearchOptions2& rOpt, bool bSearchInNotes, bool bRepl, SwCursor& rCursor )
-        : m_rSearchOpt( rOpt ), m_rCursor( rCursor ), m_aSText( utl::TextSearch::UpgradeToSearchOptions2( rOpt) ),
-        m_bReplace( bRepl ), m_bSearchInNotes( bSearchInNotes )
+    SwFindParaText(const i18nutil::SearchOptions2& rOpt, bool bSearchInNotes,
+            bool bRepl, SwCursor& rCursor, SwRootFrame const*const pLayout)
+        : m_rSearchOpt( rOpt )
+        , m_rCursor( rCursor )
+        , m_pLayout(pLayout)
+        , m_aSText( utl::TextSearch::UpgradeToSearchOptions2(rOpt) )
+        , m_bReplace( bRepl )
+        , m_bSearchInNotes( bSearchInNotes )
     {}
     virtual int DoFind(SwPaM &, SwMoveFnCollection const &, const SwPaM &, bool bInReadOnly) override;
     virtual bool IsReplaceMode() const override;
@@ -731,7 +737,8 @@ bool SwFindParaText::IsReplaceMode() const
 
 sal_uLong SwCursor::FindText( const i18nutil::SearchOptions2& rSearchOpt, bool bSearchInNotes,
                           SwDocPositions nStart, SwDocPositions nEnd,
-                          bool& bCancel, FindRanges eFndRngs, bool bReplace )
+                          bool& bCancel, FindRanges eFndRngs, bool bReplace,
+                          SwRootFrame const*const pLayout)
 {
     // switch off OLE-notifications
     SwDoc* pDoc = GetDoc();
@@ -747,7 +754,7 @@ sal_uLong SwCursor::FindText( const i18nutil::SearchOptions2& rSearchOpt, bool b
     bool bSearchSel = 0 != (rSearchOpt.searchFlag & SearchFlags::REG_NOT_BEGINOFLINE);
     if( bSearchSel )
         eFndRngs = static_cast<FindRanges>(eFndRngs | FindRanges::InSel);
-    SwFindParaText aSwFindParaText( rSearchOpt, bSearchInNotes, bReplace, *this );
+    SwFindParaText aSwFindParaText(rSearchOpt, bSearchInNotes, bReplace, *this, pLayout);
     sal_uLong nRet = FindAll( aSwFindParaText, nStart, nEnd, eFndRngs, bCancel );
     pDoc->SetOle2Link( aLnk );
     if( nRet && bReplace )
