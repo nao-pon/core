@@ -124,10 +124,24 @@ CheckParaRedlineMerge(SwTextFrame & rFrame, SwTextNode & rTextNode,
                 }
                 pTmp->SetRedlineMergeFlag(SwNode::Merge::Hidden);
             }
-            pNode = pEnd->nNode.GetNode().GetTextNode();
-            assert(pNode);
-            nodes.push_back(pNode);
-            pNode->SetRedlineMergeFlag(SwNode::Merge::NonFirst);
+            // note: in DelLastPara() case, the end node is not actually merged
+            // and is likely a SwTableNode!
+            if (!pEnd->nNode.GetNode().IsTextNode())
+            {
+                assert(pEnd->nNode != pStart->nNode);
+                assert(nodes.back() == pNode);
+                assert(nodes.back() == pNode->GetNodes()[pEnd->nNode.GetIndex() - 1]);
+                if (nodes.back() != &rTextNode)
+                {   // something might depend on last merged one being NonFirst?
+                    pNode->SetRedlineMergeFlag(SwNode::Merge::NonFirst);
+                }
+            }
+            else
+            {
+                pNode = pEnd->nNode.GetNode().GetTextNode();
+                nodes.push_back(pNode);
+                pNode->SetRedlineMergeFlag(SwNode::Merge::NonFirst);
+            }
         }
         nLastEnd = pEnd->nContent.GetIndex();
     }
